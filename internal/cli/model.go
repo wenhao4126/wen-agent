@@ -149,7 +149,8 @@ func (m chatTUI) applyModelPick() (tea.Model, tea.Cmd) {
 	m.modelPick = nil
 	// Delegate to the existing model switch logic.
 	m.runModelSubcommand("/model " + ref)
-	return m, nil
+	// Return the pending model switch command so bubbletea executes the async build.
+	return m, m.pendingModelSwitch
 }
 
 func (m chatTUI) renderModelPicker() string {

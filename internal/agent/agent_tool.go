@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"wenhao/internal/event"
@@ -257,10 +258,13 @@ func (t *AgentTool) run(ctx context.Context, prompt string, subReg *tool.Registr
 			}
 			_ = cleanErr
 		}()
-		// Tell the sub-agent to work inside the worktree. The worktree is
-		// created inside .wenhao/worktrees/ which is within the sandbox
-		// workspace root, so file writes are allowed.
-		prompt = fmt.Sprintf("You are working in an isolated workspace at %s.\nAll file paths are relative to this directory.\n%s", wt.Path, prompt)
+		// Tell the sub-agent to work inside the worktree.
+		prompt = fmt.Sprintf("Your workspace is %s. All file paths are relative to this directory.\n%s", wt.Path, prompt)
+		// Run the sub-agent inside the worktree directory. Lock an OS
+		// thread so chdir doesn't affect other goroutines.
+		origDir, _ := os.Getwd()
+		_ = os.Chdir(wt.Path)
+		defer func() { _ = os.Chdir(origDir) }()
 	}
 
 	if isFork {

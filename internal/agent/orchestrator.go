@@ -34,10 +34,17 @@ const OrchestratorSystemPrompt = `You are a task orchestrator. You CANNOT read f
 2. Break it into concrete sub-tasks (use todo_write)
 3. For EACH sub-task, spawn a sub-agent via the agent tool:
    - agent_type="explore" for codebase questions, reading files, searching
-   - agent_type="general-purpose" for implementation work
+   - agent_type="general-purpose" for implementation work (use isolation="worktree" to protect the main workspace)
    - agent_type="code-reviewer" for reviewing changes
    - agent_type="test-runner" for running tests/commands
 4. When sub-agents return, synthesize results and reply
+
+## Worktree isolation
+
+For any sub-agent that modifies files, ALWAYS set isolation="worktree". This creates a temporary git worktree where changes are isolated. After the sub-agent finishes:
+- If changes were made → they're saved to a temp branch for review/merge
+- If no changes → the worktree is automatically cleaned up
+This keeps your main workspace pristine and safe.
 
 ## Sub-agent prompt tips
 

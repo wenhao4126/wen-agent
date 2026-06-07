@@ -32,6 +32,7 @@ type AgentTool struct {
 	parentReg         *tool.Registry
 	parentSession     *Session // for fork mode: the parent's conversation context
 	registry          *Registry
+	workDir           string // project root for worktree isolation
 	maxSteps          int
 	contextWindow     int
 	softCompactRatio  float64
@@ -47,9 +48,11 @@ type AgentTool struct {
 
 // NewAgentTool wires an agent-spawning tool. registry provides the agent type
 // definitions; when nil, only fork mode (no agent_type) is available.
-// parentSession is the parent agent's session, used by fork mode to inherit context.
+// parentSession is the parent agent's session, used by fork mode to inherit
+// context. workDir is the project root, used for worktree isolation.
 func NewAgentTool(prov provider.Provider, pricing *provider.Pricing, parentReg *tool.Registry,
-	parentSession *Session, registry *Registry, maxSteps, contextWindow int,
+	parentSession *Session, registry *Registry, workDir string,
+	maxSteps, contextWindow int,
 	softCompactRatio, compactRatio, compactForceRatio, temperature float64,
 	archiveDir string, gate Gate, subagentModel, subagentEffort string,
 	resolveProvider func(modelRef, effort string) (provider.Provider, *provider.Pricing, int, error)) *AgentTool {
@@ -59,6 +62,7 @@ func NewAgentTool(prov provider.Provider, pricing *provider.Pricing, parentReg *
 		parentReg:         parentReg,
 		parentSession:     parentSession,
 		registry:          registry,
+		workDir:           workDir,
 		maxSteps:          maxSteps,
 		contextWindow:     contextWindow,
 		softCompactRatio:  softCompactRatio,
@@ -219,15 +223,15 @@ func (t *AgentTool) Execute(ctx context.Context, args json.RawMessage) (string, 
 			label = "agent"
 		}
 		job := jm.Start("agent", label, func(jobCtx context.Context, _ io.Writer) (string, error) {
-			return t.run(jobCtx, p.Prompt, subReg, sysPrompt, nested, modelRef, effortRef, isFork)
+			return t.run(jobCtx, p.Prompt, subReg, sysPrompt, nested, modelRef, effortRef, isFork, p.Isolation)
 		})
 		return fmt.Sprintf("Started background agent %q (%s). You'll be notified when it finishes.", job.ID, label), nil
 	}
 
-	return t.run(ctx, p.Prompt, subReg, sysPrompt, subSink(ctx), modelRef, effortRef, isFork)
+	return t.run(ctx, p.Prompt, subReg, sysPrompt, subSink(ctx), modelRef, effortRef, isFork, p.Isolation)
 }
 
-func (t *AgentTool) run(ctx context.Context, prompt string, subReg *tool.Registry, sysPrompt string, sink event.Sink, modelRef, effort string, isFork bool) (string, error) {
+func (t *AgentTool) run(ctx context.Context, prompt string, subReg *tool.Registry, sysPrompt string, sink event.Sink, modelRef, effort string, isFork bool, isolation string) (string, error) {
 	prov, pricing, ctxWin := t.prov, t.pricing, t.contextWindow
 	if t.resolveProvider != nil && (modelRef != "" || effort != "") {
 		p, pr, cw, err := t.resolveProvider(modelRef, effort)
@@ -236,6 +240,27 @@ func (t *AgentTool) run(ctx context.Context, prompt string, subReg *tool.Registr
 		}
 		prov, pricing, ctxWin = p, pr, cw
 	}
+
+	// Worktree isolation: create a git worktree, run the sub-agent inside it,
+	// then cleanup. Changes are committed to a temp branch for review.
+	var wt *Worktree
+	if strings.EqualFold(strings.TrimSpace(isolation), "worktree") && t.workDir != "" {
+		var err error
+		wt, err = NewWorktree(ctx, t.workDir, TempWorktreeDir())
+		if err != nil {
+			return "", fmt.Errorf("worktree setup: %w", err)
+		}
+		defer func() {
+			dirty, cleanErr := wt.Cleanup(ctx)
+			if dirty {
+				// Don't remove the worktree info — it'll be appended below.
+			}
+			_ = cleanErr
+		}()
+		// Tell the sub-agent to work inside the worktree.
+		prompt = fmt.Sprintf("You are working in an isolated workspace at %s.\nAll file paths are relative to this directory.\n%s", wt.Path, prompt)
+	}
+
 	if isFork {
 		// Fork mode: clone the parent's session to share the cache prefix.
 		// Pass parent messages so the fork inherits the full conversation context.

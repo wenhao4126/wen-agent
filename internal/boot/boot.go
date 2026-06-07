@@ -590,7 +590,7 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 	if fullReg != nil {
 		agentParentReg = fullReg
 	}
-	reg.Add(agent.NewAgentTool(execProv, entry.Price, agentParentReg, execSess, agentReg, maxSteps,
+	reg.Add(agent.NewAgentTool(execProv, entry.Price, agentParentReg, execSess, agentReg, root, maxSteps,
 		entry.ContextWindow, cfg.Agent.SoftCompactRatio, cfg.Agent.CompactRatio, cfg.Agent.CompactForceRatio,
 		cfg.Agent.Temperature, config.ArchiveDir(), headlessGate,
 		taskModel, taskEffort, resolveSubagentProvider))

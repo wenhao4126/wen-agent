@@ -190,6 +190,11 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 	allSkills := skill.New(skill.Options{ProjectRoot: root, CustomPaths: cfg.SkillCustomPaths(), MaxDepth: cfg.SkillMaxDepth(), Stderr: io.Discard}).List()
 	sysPrompt = skill.ApplyIndex(sysPrompt, skills)
 
+	// Orchestrator mode: the main agent delegates all work to sub-agents.
+	// Replace the system prompt and later filter the tool registry to only
+	// orchestration tools (agent, todo_write, ask, etc.).
+	orchestratorMode := agent.IsOrchestratorMode(cfg.Agent.Mode)
+
 	reg := tool.NewRegistry()
 	bashSpec := sandbox.Spec{Mode: cfg.BashMode(), WriteRoots: cfg.WriteRootsForRoot(root), Network: cfg.Sandbox.Network}
 	if bashSpec.Mode == "enforce" && !sandbox.Available() {
@@ -551,13 +556,32 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 
 	execSess := agent.NewSession(sysPrompt)
 
+	// Orchestrator mode: override the system prompt and swap the executor's
+	// tool registry to only orchestration tools. Save the full registry for
+	// sub-agents before filtering.
+	var fullReg *tool.Registry
+	if orchestratorMode {
+		fullReg = reg
+		// Replace the main session's system prompt with the orchestrator persona.
+		execSess.Replace([]provider.Message{
+			{Role: provider.RoleSystem, Content: agent.OrchestratorSystemPrompt},
+		})
+		// Swap the executor's tool registry to orchestrator-only subset.
+		// The full registry is kept in fullReg for sub-agent spawning.
+		reg = agent.FilterOrchestratorRegistry(reg)
+	}
+
 	// replace_context tool: requires the executor session reference for
 	// in-place message replacement.
 	reg.Add(agent.NewReplaceContextTool(execSess, sink))
 
-	// AgentTool: the unified sub-agent spawning tool. Registered after execSess
-	// so fork mode can inherit the parent's conversation context.
-	reg.Add(agent.NewAgentTool(execProv, entry.Price, reg, execSess, agentReg, maxSteps,
+	// AgentTool: the unified sub-agent spawning tool. When in orchestrator
+	// mode, use fullReg (the unfiltered registry) so sub-agents get all tools.
+	agentParentReg := reg
+	if fullReg != nil {
+		agentParentReg = fullReg
+	}
+	reg.Add(agent.NewAgentTool(execProv, entry.Price, agentParentReg, execSess, agentReg, maxSteps,
 		entry.ContextWindow, cfg.Agent.SoftCompactRatio, cfg.Agent.CompactRatio, cfg.Agent.CompactForceRatio,
 		cfg.Agent.Temperature, config.ArchiveDir(), headlessGate,
 		taskModel, taskEffort, resolveSubagentProvider))

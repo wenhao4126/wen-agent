@@ -51,6 +51,13 @@ const (
 	SubagentStop Event = "SubagentStop"
 	Notification Event = "Notification"
 	PreCompact   Event = "PreCompact"
+	// AgentEnd fires after a sub-agent completes its run (foreground only).
+	// The payload carries the sub-agent's final answer in LastAssistant.
+	AgentEnd Event = "AgentEnd"
+	// BeforeToolCall fires before any tool call, allowing hooks to inspect
+	// or transform the tool arguments before execution. Blocking (exit 2)
+	// prevents the tool from running.
+	BeforeToolCall Event = "BeforeToolCall"
 )
 
 // Events is every event, in a stable order — drives loading and `/hooks`.
@@ -58,12 +65,15 @@ var Events = []Event{
 	PreToolUse, PostToolUse, UserPromptSubmit, Stop,
 	PostLLMCall,
 	SessionStart, SessionEnd, SubagentStop, Notification, PreCompact,
+	AgentEnd, BeforeToolCall,
 }
 
 // IsBlocking reports whether a non-zero/exit-2 (or timed-out) hook on this event
 // can block the loop. Only the gating events qualify. (PreCompact does not block;
 // it only contributes guidance via stdout.)
-func IsBlocking(e Event) bool { return e == PreToolUse || e == UserPromptSubmit }
+func IsBlocking(e Event) bool {
+	return e == PreToolUse || e == UserPromptSubmit || e == BeforeToolCall
+}
 
 // defaultTimeout is the per-event timeout when a hook sets none. Tool/prompt
 // hooks gate progress, so they're tight; post/stop hooks get more room.

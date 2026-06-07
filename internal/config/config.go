@@ -441,9 +441,12 @@ func (c *Config) BashMode() string {
 // planner handles low-frequency planning in its own session (kept separate so
 // each model's prompt prefix stays cache-stable). SubagentModel is the optional
 // default for runAs=subagent skills; SubagentModels overrides it per skill name.
+// Mode selects the agent persona: "normal" (default, full tool access) or
+// "orchestrator" (pure delegation — the main agent only spawns sub-agents).
 type AgentConfig struct {
 	SystemPrompt     string            `toml:"system_prompt"`
 	SystemPromptFile string            `toml:"system_prompt_file"`
+	Mode             string            `toml:"mode"` // "normal" | "orchestrator"
 	MaxSteps         int               `toml:"max_steps"` // tool-call rounds per turn; 0 = unlimited
 	Temperature      float64           `toml:"temperature"`
 	PlannerModel     string            `toml:"planner_model"`

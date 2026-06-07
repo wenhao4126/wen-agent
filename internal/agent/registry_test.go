@@ -73,7 +73,7 @@ func TestAgentRegistry_Listing(t *testing.T) {
 
 	// Should contain agent types.
 	for _, want := range []string{"general-purpose", "explore", "code-reviewer", "test-runner"} {
-		if !contains(listing, want) {
+		if !strContains(listing, want) {
 			t.Errorf("listing should contain %q", want)
 		}
 	}
@@ -207,7 +207,7 @@ func TestReviewLoop_IsApproved(t *testing.T) {
 	}
 }
 
-func contains(s, sub string) bool {
+func strContains(s, sub string) bool {
 	for i := 0; i <= len(s)-len(sub); i++ {
 		if s[i:i+len(sub)] == sub {
 			return true

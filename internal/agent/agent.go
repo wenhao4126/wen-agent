@@ -105,10 +105,12 @@ type ToolHooks interface {
 	// streaming reasoning live when none is wired up.
 	PostLLMCall(ctx context.Context, reasoning string, turn int) string
 	HasPostLLMCall() bool
-	// SubagentStop fires when a `task` sub-agent finishes (foreground). PreCompact
-	// fires just before a compaction pass and returns extra summary guidance (its
+	// SubagentStop fires when a `task` sub-agent finishes (foreground). AgentEnd
+	// fires when any sub-agent (task, agent, skill) completes. PreCompact fires
+	// just before a compaction pass and returns extra summary guidance (its
 	// hooks' stdout) to fold into the summary prompt; "" when no hook contributes.
 	SubagentStop(ctx context.Context, last string)
+	AgentEnd(ctx context.Context, last string)
 	PreCompact(ctx context.Context, trigger string) string
 }
 
@@ -1045,11 +1047,13 @@ func (a *Agent) executeOne(ctx context.Context, call provider.ToolCall) toolOutc
 		return toolOutcome{output: body, errMsg: firstLine(err.Error()), truncated: truncMsg != "", truncMsg: truncMsg}
 	}
 	a.recordRepeatSuccess(call, t)
-	// A foreground `task` sub-agent just finished — its result is the final answer.
-	// (A backgrounded one returns a "Started…" string and stops later in a job, so
-	// it doesn't fire here.) SubagentStop lets a hook react to delegated work.
-	if a.hooks != nil && call.Name == "task" && !isBackgroundTaskCall(call.Arguments) {
+	// A foreground `task` or `agent` sub-agent just finished — its result
+	// is the final answer. (A backgrounded one returns a "Started…" string
+	// and stops later in a job, so it doesn't fire here.) SubagentStop and
+	// AgentEnd let hooks react to delegated work.
+	if a.hooks != nil && (call.Name == "task" || call.Name == "agent") && !isBackgroundTaskCall(call.Arguments) {
 		a.hooks.SubagentStop(ctx, result)
+		a.hooks.AgentEnd(ctx, result)
 	}
 	body, truncMsg := truncateToolOutput(result)
 	return toolOutcome{output: body, truncated: truncMsg != "", truncMsg: truncMsg}

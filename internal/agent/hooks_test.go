@@ -39,6 +39,10 @@ func (h *stubHooks) PostToolUse(_ context.Context, name string, _ json.RawMessag
 func (h *stubHooks) SubagentStop(_ context.Context, last string) {
 	h.subagentSeen = append(h.subagentSeen, last)
 }
+func (h *stubHooks) AgentEnd(_ context.Context, last string) {
+	// AgentEnd mirrors SubagentStop in test stubs.
+	h.subagentSeen = append(h.subagentSeen, last)
+}
 func (h *stubHooks) PreCompact(context.Context, string) string { return h.preCompactOut }
 
 func (h *stubHooks) PostLLMCall(_ context.Context, reasoning string, turn int) string {

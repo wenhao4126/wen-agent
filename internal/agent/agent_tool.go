@@ -246,7 +246,7 @@ func (t *AgentTool) run(ctx context.Context, prompt string, subReg *tool.Registr
 	var wt *Worktree
 	if strings.EqualFold(strings.TrimSpace(isolation), "worktree") && t.workDir != "" {
 		var err error
-		wt, err = NewWorktree(ctx, t.workDir, TempWorktreeDir())
+		wt, err = NewWorktree(ctx, t.workDir, RepoWorktreeDir(t.workDir))
 		if err != nil {
 			return "", fmt.Errorf("worktree setup: %w", err)
 		}
@@ -257,7 +257,9 @@ func (t *AgentTool) run(ctx context.Context, prompt string, subReg *tool.Registr
 			}
 			_ = cleanErr
 		}()
-		// Tell the sub-agent to work inside the worktree.
+		// Tell the sub-agent to work inside the worktree. The worktree is
+		// created inside .wenhao/worktrees/ which is within the sandbox
+		// workspace root, so file writes are allowed.
 		prompt = fmt.Sprintf("You are working in an isolated workspace at %s.\nAll file paths are relative to this directory.\n%s", wt.Path, prompt)
 	}
 

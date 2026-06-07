@@ -205,10 +205,17 @@ func gitBranchDelete(ctx context.Context, repo, branch string) {
 }
 
 // TempWorktreeDir returns the parent directory for worktree creation.
-// Defaults to the OS temp dir; can be overridden via WENHAO_WORKTREE_DIR.
+// Defaults to a .wenhao/worktrees/ dir inside the repo so the sandbox
+// doesn't block writes. Falls back to OS temp dir when not in a repo.
 func TempWorktreeDir() string {
 	if d := os.Getenv("WENHAO_WORKTREE_DIR"); d != "" {
 		return d
 	}
 	return os.TempDir()
+}
+
+// RepoWorktreeDir returns a worktree parent dir inside the repo's
+// .wenhao/ directory, which is within the sandbox's allowed write roots.
+func RepoWorktreeDir(repoDir string) string {
+	return filepath.Join(repoDir, ".wenhao", "worktrees")
 }

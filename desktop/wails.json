@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "wenhao-desktop",
+  "outputfilename": "wenhao-desktop",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm build",
+  "frontend:dev:watcher": "pnpm dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "esengine"
+  },
+  "info": {
+    "companyName": "Wenhao",
+    "productName": "Wenhao",
+    "productVersion": "0.0.0",
+    "copyright": "Copyright © 2026 Wenhao Contributors",
+    "comments": "Wenhao desktop — a Wails shell around the Go kernel."
+  }
+}

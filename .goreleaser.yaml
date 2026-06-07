@@ -1,0 +1,59 @@
+version: 2
+project_name: wenhao
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: wenhao
+    main: ./cmd/wenhao
+    binary: wenhao
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Tag }}
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: wenhao
+    ids: [wenhao]
+    name_template: "wenhao-{{ .Os }}-{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: SHA256SUMS
+  algorithm: sha256
+
+homebrew_casks:
+  - name: wenhao
+    ids: [wenhao]
+    # Prereleases (v*-rc*) must not update the stable tap; brew has no separate
+    # prerelease channel, so a pushed rc cask becomes the default `brew install`.
+    skip_upload: "auto"
+    repository:
+      owner: esengine
+      name: homebrew-wenhao
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/esengine/DeepSeek-Wenhao"
+    description: "Cache-first DeepSeek coding agent for the terminal."
+    commit_author:
+      name: wenhao
+      email: wenhao@deepseek.com
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/wenhao"]
+          end
+
+release:
+  prerelease: auto
+  name_template: "Wenhao CLI {{ .Tag }}"

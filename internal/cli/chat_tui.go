@@ -86,6 +86,10 @@ type chatTUI struct {
 	// Persists across turns until the work completes or a new session starts.
 	todoArgs string
 
+	// agentTasks tracks sub-agent spawns for the orchestration panel. Keyed by
+	// tool call ID; entries are added on ToolDispatch and resolved on ToolResult.
+	agentTasks map[string]agentTask
+
 	// planMode mirrors the agent's read-only gate (Shift+Tab cycles it). The marker
 	// rides in outgoing user messages so the cache-stable prompt prefix is left
 	// untouched.
@@ -1064,6 +1068,7 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.runStart = time.Now()
 				m.elapsed = 0
 				m.turnTokens = 0
+				m.agentTasks = nil // clear previous turn's sub-agent status
 				m.pendingRestore = line
 				m.bubbleStartIdx = len(m.transcript)
 				m.commitLine("")
@@ -1333,6 +1338,7 @@ func (m chatTUI) bottomRows() int {
 	rows := 0
 	for _, s := range []string{
 		m.renderTodoPanel(),
+		m.renderAgentPanel(),
 		m.renderApprovalBanner(),
 		m.renderChooser(),
 		m.renderRewind(),
@@ -1865,6 +1871,7 @@ var (
 	inputBoxStyle       lipgloss.Style
 	approvalBannerStyle lipgloss.Style
 	todoPanelStyle      lipgloss.Style
+	agentPanelStyle     lipgloss.Style
 	statusBlockStyle    lipgloss.Style
 	workingStyle        lipgloss.Style
 )
@@ -2002,6 +2009,10 @@ func (m chatTUI) View() tea.View {
 	if todo := m.renderTodoPanel(); todo != "" {
 		parts = append(parts, todo)
 		rowsAboveBox += strings.Count(todo, "\n") + 1
+	}
+	if agents := m.renderAgentPanel(); agents != "" {
+		parts = append(parts, agents)
+		rowsAboveBox += strings.Count(agents, "\n") + 1
 	}
 	if banner := m.renderApprovalBanner(); banner != "" {
 		parts = append(parts, banner)
@@ -2337,6 +2348,58 @@ func todoPanelWindow(todos []todoPanelTodo) (int, int) {
 		start = maxStart
 	}
 	return start, start + todoPanelMaxRows
+}
+
+// agentTask tracks a running or completed sub-agent spawn for the orchestration panel.
+type agentTask struct {
+	id     string
+	name   string // "agent" or "task"
+	status string // "running" | "done" | "error"
+	args   string // raw JSON args (contains description and prompt)
+	errMsg string
+}
+
+// renderAgentPanel renders running and recently-completed sub-agents as a
+// compact panel above the composer. Shows "⟳ Spawning sub-agent..." while
+// running and "✓ Sub-agent done" when finished. Returns "" when there are
+// no active or recently-completed agent tasks.
+func (m chatTUI) renderAgentPanel() string {
+	if len(m.agentTasks) == 0 {
+		return ""
+	}
+	running := 0
+	done := 0
+	errors := 0
+	for _, at := range m.agentTasks {
+		switch at.status {
+		case "running":
+			running++
+		case "done":
+			done++
+		case "error":
+			errors++
+		}
+	}
+	// If everything is done and has been for a while, don't show.
+	if running == 0 && done == 0 && errors == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	if running > 0 {
+		b.WriteString(accent(fmt.Sprintf("⟳ %d sub-agent(s) running", running)))
+	}
+	if done > 0 {
+		if running > 0 {
+			b.WriteString(" · ")
+		}
+		b.WriteString(dim(fmt.Sprintf("✓ %d completed", done)))
+	}
+	if errors > 0 {
+		b.WriteString(" · ")
+		b.WriteString(red(fmt.Sprintf("✗ %d failed", errors)))
+	}
+	return agentPanelStyle.Width(max(m.width, 10)).Render(b.String())
 }
 
 // truncateSubject trims a tool subject so the approval banner fits one line.
@@ -2825,6 +2888,18 @@ func (m *chatTUI) ingestEvent(e event.Event) {
 			}
 			m.commitLine(toolCard(e.Tool.Name, e.Tool.Args, m.width))
 			m.beginToolRunning(e.Tool.ID)
+			// Track agent/task spawns for the orchestration panel.
+			if e.Tool.Name == "agent" || e.Tool.Name == "task" {
+				if m.agentTasks == nil {
+					m.agentTasks = map[string]agentTask{}
+				}
+				m.agentTasks[e.Tool.ID] = agentTask{
+					id:     e.Tool.ID,
+					name:   e.Tool.Name,
+					status: "running",
+					args:   e.Tool.Args,
+				}
+			}
 		}
 
 	case event.ToolProgress:
@@ -2837,6 +2912,18 @@ func (m *chatTUI) ingestEvent(e event.Event) {
 		m.collapseToolOutput(e.Tool.ID)
 		if e.Tool.Name == "todo_write" && e.Tool.Err == "" {
 			m.todoArgs = e.Tool.Args
+		}
+		// Update agent task status.
+		if m.agentTasks != nil {
+			if at, ok := m.agentTasks[e.Tool.ID]; ok {
+				if e.Tool.Err != "" {
+					at.status = "error"
+					at.errMsg = e.Tool.Err
+				} else {
+					at.status = "done"
+				}
+				m.agentTasks[e.Tool.ID] = at
+			}
 		}
 		if e.Tool.Err != "" {
 			m.finalizeStreamed()

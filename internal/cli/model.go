@@ -147,6 +147,9 @@ func (m chatTUI) applyModelPick() (tea.Model, tea.Cmd) {
 	}
 	ref := p.models[p.sel].ref
 	m.modelPick = nil
+	// Clear the input so no stale path/content is submitted when the
+	// composer becomes visible again after the picker dismisses.
+	m.input.Reset()
 	// Delegate to the existing model switch logic.
 	m.runModelSubcommand("/model " + ref)
 	// Return the pending model switch command so bubbletea executes the async build.

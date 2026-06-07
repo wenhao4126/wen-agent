@@ -115,6 +115,9 @@ func (m *chatTUI) openModelPicker() {
 		m.notice(i18n.M.ModelSwitchUnavailable)
 		return
 	}
+	// Clear any stale input so the composer doesn't submit old content
+	// when it reappears after the picker closes.
+	m.input.Reset()
 	m.modelPick = &modelPicker{models: refs, sel: sel}
 }
 

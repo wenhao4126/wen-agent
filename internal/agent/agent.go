@@ -1,3 +1,16 @@
+// Package agent drives a single task: it connects a Provider (model API), a
+// tool Registry (available tools), and a Session (conversation history) into a
+// Run loop that streams reasoning/text deltas and dispatches tool calls until
+// the model returns a final answer.
+//
+// The core types are:
+//   - Agent  — the main loop; owns the provider, session, tools, and gating
+//   - Renderer, Asker, Gate, ToolHooks — interfaces for frontend integration
+//   - callContext — per-call context stamped onto tool execution (call ID,
+//     event sink, asker)
+//
+// The agent is frontend-agnostic: it emits typed events (event.Sink) and lets
+// the chat TUI, HTTP/SSE serve, or Wails desktop decide how to render them.
 package agent
 
 import (
@@ -28,7 +41,14 @@ import (
 // window before the next compaction runs.
 const maxToolOutputBytes = 32 * 1024
 
+// maxFinalReadinessBlocks caps retries when the model's final answer fails the
+// readiness check (e.g. missing evidence citations). After this many consecutive
+// blocks the run loop errors out instead of letting the model spin forever.
 const maxFinalReadinessBlocks = 3
+
+// maxEmptyFinalBlocks caps retries when the model returns a final answer (no
+// tool calls) but the content is empty — no visible text at all. After this
+// many empty finals the run loop errors out to avoid silent infinite loops.
 const maxEmptyFinalBlocks = 3
 
 // Renderer redraws the assistant's final-answer text as styled output. It is

@@ -554,22 +554,31 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 		reg.Add(t)
 	}
 
-	execSess := agent.NewSession(sysPrompt)
-
-	// Orchestrator mode: override the system prompt and swap the executor's
-	// tool registry to only orchestration tools. Save the full registry for
-	// sub-agents before filtering.
+	// Orchestrator mode: replace system prompt + filter tools. Apply BEFORE
+	// session creation so memory/skills/language are preserved in the prefix.
 	var fullReg *tool.Registry
 	if orchestratorMode {
 		fullReg = reg
-		// Replace the main session's system prompt with the orchestrator persona.
-		execSess.Replace([]provider.Message{
-			{Role: provider.RoleSystem, Content: agent.OrchestratorSystemPrompt},
-		})
+		// Replace the system prompt with the orchestrator persona. Keep memory
+		// and skills context appended.
+		base := agent.OrchestratorSystemPrompt
+		if memBlock := mem.Block(); memBlock != "" {
+			base += "\n\n" + memBlock
+		}
+		base += "\n\n" + config.LanguagePolicy
+		base = skill.ApplyIndex(base, skills)
+		sysPrompt = base
 		// Swap the executor's tool registry to orchestrator-only subset.
-		// The full registry is kept in fullReg for sub-agent spawning.
 		reg = agent.FilterOrchestratorRegistry(reg)
+		// Auto-allow agent and task tools so the orchestrator never waits for
+		// permission to spawn sub-agents.
+		policy = permission.New(cfg.Permissions.Mode,
+			append(cfg.Permissions.Allow, "agent", "task"),
+			cfg.Permissions.Ask, cfg.Permissions.Deny)
+		headlessGate = permission.NewGate(policy, nil)
 	}
+
+	execSess := agent.NewSession(sysPrompt)
 
 	// replace_context tool: requires the executor session reference for
 	// in-place message replacement.

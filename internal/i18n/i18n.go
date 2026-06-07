@@ -63,6 +63,10 @@ type Messages struct {
 	ResumePickTitle     string // header in the interactive resume picker
 	ResumePickHint      string // keyboard hint in the interactive resume picker
 
+	ModelPickTitle  string // header in the interactive model picker
+	ModelPickHint   string // keyboard hint in the interactive model picker
+	ModelPickActive string // "(active)" tag in the model picker
+
 	// chat TUI status line / approval banner.
 	ChatThinking           string // live reasoning marker label, e.g. "thinking…"
 	ChatThoughtForFmt      string // collapsed reasoning summary, "%d" = elapsed s
@@ -89,6 +93,7 @@ type Messages struct {
 	AskChatInstead     string // the "don't pick, just chat" option label
 	ChatStatusQuestion string // shortcuts hint while a question card is open
 	StatusResumePicker string // status tag while the resume picker is open (e.g. "select session")
+	StatusModelPicker  string // status tag while the model picker is open (e.g. "select model")
 	AskSubmitTitle     string // submit-tab title in the ask tool question card
 	AskUnanswered      string // placeholder for an unanswered ask question
 	AskSubmitHint      string // submit-tab keyboard hint

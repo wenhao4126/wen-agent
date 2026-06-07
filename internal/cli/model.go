@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -10,14 +11,13 @@ import (
 	"wenhao/internal/i18n"
 )
 
-// runModelSubcommand handles "/model": with no argument it lists the configured
-// (provider, model) refs and marks the active one; "/model <ref>" switches the
-// session to that model in place, carrying the conversation across. The actual
-// controller build runs asynchronously so it cannot block the TUI event loop.
+// runModelSubcommand handles "/model": with no argument it opens an interactive
+// picker (↑/↓ to browse, Enter to select); "/model <ref>" switches the session
+// to that model in place, carrying the conversation across.
 func (m *chatTUI) runModelSubcommand(input string) {
 	args := tokenizeArgs(input) // args[0] == "/model"
 	if len(args) < 2 {
-		m.showModels()
+		m.openModelPicker()
 		return
 	}
 	ref := args[1]
@@ -74,24 +74,101 @@ func (m *chatTUI) runModelSubcommand(input string) {
 	}
 }
 
-// showModels lists the configured provider/model refs, marking the active one.
-func (m *chatTUI) showModels() {
+// --- Model picker overlay ---
+
+type modelRef struct {
+	ref    string // "provider/model"
+	active bool   // currently selected model
+}
+
+// modelPicker is an in-chat overlay for "/model" that lets the user pick a
+// model with ↑/↓ and confirm with Enter. Mirrors the resumePicker pattern.
+type modelPicker struct {
+	models []modelRef
+	sel    int // selected index
+}
+
+// openModelPicker populates the picker from configured providers and opens it.
+func (m *chatTUI) openModelPicker() {
 	cfg, err := config.Load()
 	if err != nil {
 		m.notice("model: " + err.Error())
 		return
 	}
-	var refs []string
+	var refs []modelRef
+	sel := 0
 	for i := range cfg.Providers {
 		p := &cfg.Providers[i]
 		if !p.Configured() {
 			continue
 		}
 		for _, model := range p.ModelList() {
-			refs = append(refs, p.Name+"/"+model)
+			ref := p.Name + "/" + model
+			active := ref == m.modelRef
+			refs = append(refs, modelRef{ref: ref, active: active})
+			if active {
+				sel = len(refs) - 1
+			}
 		}
 	}
-	m.commitLine(renderModels(m.width, refs, m.modelRef))
+	if len(refs) == 0 {
+		m.notice(i18n.M.ModelSwitchUnavailable)
+		return
+	}
+	m.modelPick = &modelPicker{models: refs, sel: sel}
+}
+
+func (m chatTUI) handleModelPickerKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	p := m.modelPick
+	if p == nil {
+		return m, nil
+	}
+	switch msg.String() {
+	case "up", "k":
+		if p.sel > 0 {
+			p.sel--
+		}
+	case "down", "j":
+		if p.sel < len(p.models)-1 {
+			p.sel++
+		}
+	case "enter":
+		return m.applyModelPick()
+	case "esc":
+		m.modelPick = nil
+	}
+	return m, nil
+}
+
+func (m chatTUI) applyModelPick() (tea.Model, tea.Cmd) {
+	p := m.modelPick
+	if p == nil || p.sel < 0 || p.sel >= len(p.models) {
+		return m, nil
+	}
+	ref := p.models[p.sel].ref
+	m.modelPick = nil
+	// Delegate to the existing model switch logic.
+	m.runModelSubcommand("/model " + ref)
+	return m, nil
+}
+
+func (m chatTUI) renderModelPicker() string {
+	p := m.modelPick
+	if p == nil {
+		return ""
+	}
+	w := max(m.width, 10)
+	var b strings.Builder
+	b.WriteString(accent(i18n.M.ModelPickTitle) + "\n")
+	for i, r := range p.models {
+		label := r.ref
+		if r.active {
+			label += " " + dim(i18n.M.ModelPickActive)
+		}
+		b.WriteString(rowLine(i == p.sel, i+1, "", label, false) + "\n")
+	}
+	b.WriteString(dim(i18n.M.ModelPickHint))
+	return choicePanelStyle.Width(w).Render(b.String())
 }
 
 // modelRefs returns the configured provider/model refs for slash completion.

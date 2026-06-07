@@ -205,6 +205,9 @@ type chatTUI struct {
 	// resumePick is the interactive "/resume" session picker overlay. Non-nil
 	// while the user browses saved sessions with ↑/↓ and confirms with Enter.
 	resumePick *resumePicker
+	// modelPick is the interactive "/model" picker overlay. Non-nil while the
+	// user browses configured models with ↑/↓ and confirms with Enter.
+	modelPick *modelPicker
 	lastEsc    time.Time
 
 	// mcp is the interactive "/mcp" manager overlay. mcpDisabled tracks servers
@@ -824,6 +827,10 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.resumePick != nil {
 			return m.handleResumePickerKey(msg)
 		}
+		// The model picker is modal while open: keys navigate it.
+		if m.modelPick != nil {
+			return m.handleModelPickerKey(msg)
+		}
 		// The MCP manager is modal while open: keys navigate it.
 		if m.mcp != nil {
 			return m.handleMCPManagerKey(msg)
@@ -1330,6 +1337,7 @@ func (m chatTUI) bottomRows() int {
 		m.renderChooser(),
 		m.renderRewind(),
 		m.renderResumePicker(),
+		m.renderModelPicker(),
 		m.renderCompletion(),
 	} {
 		if s != "" {
@@ -1361,7 +1369,7 @@ func (m chatTUI) bottomRows() int {
 // reserve rows for a composer that cannot receive input, leaving a confusing
 // blank/bordered area at the bottom of the TUI.
 func (m chatTUI) hideComposer() bool {
-	if m.mcp != nil || m.skillPick != nil || m.resumePick != nil || m.rewind != nil || m.pendingApproval != nil {
+	if m.mcp != nil || m.skillPick != nil || m.resumePick != nil || m.modelPick != nil || m.rewind != nil || m.pendingApproval != nil {
 		return true
 	}
 	return m.chooser != nil && !m.chooser.typing
@@ -1914,6 +1922,8 @@ func (m chatTUI) View() tea.View {
 	switch {
 	case m.rewind != nil:
 		status = "  " + modeTag + " · ⟲ rewind"
+	case m.modelPick != nil:
+		status = "  " + modeTag + " · " + i18n.M.StatusModelPicker
 	case m.resumePick != nil:
 		status = "  " + modeTag + " · " + i18n.M.StatusResumePicker
 	case m.mcp != nil:
@@ -2006,6 +2016,10 @@ func (m chatTUI) View() tea.View {
 		rowsAboveBox += strings.Count(card, "\n") + 1
 	}
 	if card := m.renderResumePicker(); card != "" {
+		parts = append(parts, card)
+		rowsAboveBox += strings.Count(card, "\n") + 1
+	}
+	if card := m.renderModelPicker(); card != "" {
 		parts = append(parts, card)
 		rowsAboveBox += strings.Count(card, "\n") + 1
 	}

@@ -34,14 +34,18 @@ const OrchestratorSystemPrompt = `You are a task orchestrator. Your job is NOT t
 - **todo_write** — track the overall task. Each sub-task becomes a todo item.
 - **ask** — confirm with the user when a decision has real consequences.
 
-## What you NEVER do
+## What you handle yourself vs delegate
 
-You must NEVER directly call these tools. Delegate instead:
-- read_file → agent(agent_type="explore", prompt="read and summarize <file>")
-- grep / glob → agent(agent_type="explore", prompt="search for <pattern> in the codebase")
-- edit_file / write_file → agent(agent_type="general-purpose", prompt="make the following edit: ...")
-- bash → agent(agent_type="test-runner", prompt="run <command> and report the results")
-- web_fetch → agent(agent_type="research", prompt="fetch and summarize <url>")
+You MAY directly use these for quick context:
+- read_file — read a known file path (README, config, a specific source file). Don't read more than 2-3 files yourself.
+- ls — quickly check what files exist in a directory.
+
+You MUST delegate these (spawn a sub-agent via the agent tool):
+- grep / glob — searching across the codebase
+- edit_file / write_file — any file modification
+- bash — any command execution
+- web_fetch — fetching URLs
+- Multi-file research — if you need to read 3+ files, spawn an explore agent
 
 ## How to work
 
@@ -69,7 +73,7 @@ You must NEVER directly call these tools. Delegate instead:
 
 ## Context discipline
 
-Your context stays clean because you never read files or search code. This is intentional — it means you can handle very long, complex tasks without compaction. Protect this: don't call read_file "just to check something." Delegate it.`
+Keep your context clean. Use read_file sparingly for quick context checks only (1-2 files). For anything that requires reading multiple files, searching, or deep investigation — delegate to a sub-agent. This keeps your context compact and cache-friendly across long sessions.`
 
 // OrchestratorTools is the tool allowlist for orchestrator mode. The main agent
 // may ONLY call these tools; all others are filtered out of its registry. The
@@ -78,6 +82,12 @@ Your context stays clean because you never read files or search code. This is in
 // read_file and ls are included for lightweight context (e.g. reading
 // REASONIX.md or checking a file exists) but the prompt steers the model AWAY
 // from using them for real work.
+// OrchestratorTools is the tool allowlist for orchestrator mode. The main agent
+// may ONLY call these tools; all others are filtered out.
+//
+// read_file and ls are included for lightweight context checks (e.g. "read the
+// README", "what files are in src/"). Real work (grep, edit, bash) MUST still go
+// through sub-agents — the orchestrator prompt enforces this.
 var OrchestratorTools = []string{
 	"agent",
 	"task",
@@ -86,6 +96,9 @@ var OrchestratorTools = []string{
 	"complete_step",
 	"wait",
 	"bash_output",
+	// Lightweight context tools — for quick checks only, not heavy work.
+	"read_file",
+	"ls",
 }
 
 // IsOrchestratorMode reports whether the given mode string enables orchestration.

@@ -708,8 +708,8 @@ export default function App() {
         notice(t("settings.themeUnknown", { name: arg }), "warn");
         return;
       }
-      await syncModeToController(mode);
       send(trimmed, submitText.trim());
+      void syncModeToController(mode);
     },
     [switchModel, openMemory, syncModeToController, mode, send, runShell, notice, t],
   );

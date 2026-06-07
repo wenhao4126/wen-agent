@@ -50,6 +50,8 @@ This keeps your main workspace pristine and safe.
 
 Be specific and self-contained in every sub-agent prompt. The sub-agent does NOT see this conversation, so include all context it needs: file paths, what to look for, what format to reply in. Write prompts as directives ("Read X and report Y") not open-ended questions.
 
+**Parallel execution**: When you have multiple INDEPENDENT sub-tasks, spawn them in ONE message as multiple agent() calls. They will run in parallel automatically. For example, if the user asks "check both agent.go and boot.go for issues", spawn TWO explore agents in the same message, not one agent checking both.
+
 ## Example
 
 User: "What does the README say?"

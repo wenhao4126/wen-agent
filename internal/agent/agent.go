@@ -833,6 +833,11 @@ func parallelisable(r *tool.Registry, name string) bool {
 	if name == "complete_step" || name == "todo_write" {
 		return false
 	}
+	// agent and task tools spawn independent sub-agents with separate sessions.
+	// Multiple spawns in one turn are safe to parallelize.
+	if name == "agent" || name == "task" {
+		return true
+	}
 	t, ok := r.Get(name)
 	return ok && t.ReadOnly()
 }

@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100">
-  <text x="20" y="72" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace" font-size="44" font-weight="700" fill="#0153e5">wen</text>
-  <text x="135" y="72" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace" font-size="44" font-weight="700" fill="#0153e5" opacity="0.5">agent</text>
-  <circle cx="122" cy="58" r="5" fill="#0153e5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56">
+  <defs>
+    <linearGradient id="wg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0054e9"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <!-- stylized W icon -->
+  <g transform="translate(2, 12)">
+    <polygon points="0,32 10,0 24,0 32,20 40,0 54,0 64,32 50,32 43,12 36,32 24,32 17,12 10,32" fill="url(#wg)"/>
+  </g>
+  <text x="75" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.5" fill="url(#wg)">wen</text>
+  <circle cx="127" cy="26" r="4" fill="#d97757"/>
+  <text x="139" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="500" letter-spacing="0.5" fill="url(#wg)" opacity="0.45">agent</text>
 </svg>

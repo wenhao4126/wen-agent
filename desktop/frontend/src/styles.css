@@ -7360,10 +7360,10 @@ a[href] {
 
 .app-chrome__logo {
   flex: 0 0 auto;
-  width: 140px;
-  height: auto;
-  max-height: 30px;
+  width: 110px;
+  height: 28px;
   border-radius: 0;
+  object-fit: contain;
 }
 
 .app-chrome__identity strong {

@@ -3,18 +3,9 @@ name: Build desktop
 on:
   push:
     branches: [main]
-    paths:
-      - "desktop/**"
-      - "internal/**"
-      - "go.mod"
-      - "go.sum"
+    tags: ["v*"]
   pull_request:
     branches: [main]
-    paths:
-      - "desktop/**"
-      - "internal/**"
-      - "go.mod"
-      - "go.sum"
   workflow_dispatch:
 
 jobs:

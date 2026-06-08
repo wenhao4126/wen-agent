@@ -1256,9 +1256,8 @@ a[href] {
 }
 .msg--user .msg__body {
   max-width: 82%;
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
-  border-right: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elev-2));
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
   border-radius: 16px;
   padding: 10px 16px;
   position: relative;

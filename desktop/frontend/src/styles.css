@@ -392,6 +392,15 @@ a[href] {
   cursor: pointer;
 }
 
+::selection {
+  background: rgba(91, 141, 239, 0.35);
+  color: inherit;
+}
+::-moz-selection {
+  background: rgba(91, 141, 239, 0.35);
+  color: inherit;
+}
+
 .app {
   height: 100%;
   min-height: 0;

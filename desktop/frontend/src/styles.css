@@ -420,6 +420,7 @@ a[href] {
   height: 100%;
   min-height: 0;
   min-width: 0;
+  overflow: hidden;
   background: var(--bg);
   transition: grid-template-columns 0.16s ease;
 }
@@ -682,6 +683,7 @@ a[href] {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   background: var(--chat-bg);
 }
 
@@ -817,7 +819,7 @@ a[href] {
 
 /* ── transcript ──────────────────────────────────────────────────────────── */
 .main {
-  flex: 1 1 auto;
+  flex: 1;
   overflow: hidden;
   min-height: 0;
   min-width: 0;
@@ -1671,8 +1673,11 @@ a[href] {
   font-family: var(--mono);
   font-size: var(--font-code);
   line-height: 1.55;
-  overflow: auto;
+  max-width: 100%;
+  overflow-x: auto;
   white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
   color: var(--fg);
 }
 .code--loading {

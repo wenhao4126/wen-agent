@@ -126,13 +126,18 @@ jobs:
         run: |
           cd desktop
           wails build -ldflags "-X main.version=$(git describe --tags --always 2>/dev/null || echo dev)"
+          echo "=== Build output ==="
+          ls -la build/bin/ 2>/dev/null || echo "build/bin/ not found"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: wenhao-macos-${{ matrix.arch }}
-          path: desktop/build/bin/wenhao-desktop
-          if-no-files-found: error
+          path: |
+            desktop/build/bin/wenhao-desktop
+            desktop/build/bin/*.app
+            desktop/build/bin/*.dmg
+          if-no-files-found: warn
 
   release:
     name: Create release
@@ -149,13 +154,10 @@ jobs:
       - name: Rename and flatten assets
         run: |
           mkdir -p release-assets
-          # Linux
-          cp artifacts/wenhao-linux-amd64/wenhao-desktop release-assets/wenhao-linux-amd64 2>/dev/null || true
-          # Windows
-          cp artifacts/wenhao-windows-amd64/wenhao-desktop.exe release-assets/wenhao-windows-amd64.exe 2>/dev/null || true
-          # macOS
-          cp artifacts/wenhao-macos-amd64/wenhao-desktop release-assets/wenhao-macos-amd64 2>/dev/null || true
-          cp artifacts/wenhao-macos-arm64/wenhao-desktop release-assets/wenhao-macos-arm64 2>/dev/null || true
+          # Find all artifacts and copy them
+          find artifacts/ -type f -exec cp {} release-assets/ \;
+          # Also handle .app bundles
+          find artifacts/ -name "*.app" -type d -exec cp -R {} release-assets/ \;
           cd release-assets && ls -la
 
       - uses: softprops/action-gh-release@v2

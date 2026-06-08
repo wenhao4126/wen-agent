@@ -651,6 +651,15 @@ export function Composer({
     requestAnimationFrame(() => taRef.current?.focus());
   };
 
+  // Auto-resize the textarea as text grows. Falls back gracefully when
+  // field-sizing:content is unsupported (e.g. older WebKitGTK).
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+  }, [text]);
+
   const togglePastedPreview = (label: string) => {
     setOpenPastedLabels((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));
   };

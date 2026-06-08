@@ -975,6 +975,33 @@ a[href] {
   margin-left: auto;
   margin-right: auto;
 }
+.transcript__down {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elev);
+  color: var(--fg-dim);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  z-index: 15;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s, transform 0.12s;
+  animation: transcript-down-in 0.18s ease-out;
+}
+.transcript__down:hover {
+  color: var(--fg);
+  background: var(--bg-elev-2);
+  transform: scale(1.08);
+}
+@keyframes transcript-down-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .transcript--empty {
   container-type: size;
   display: grid;

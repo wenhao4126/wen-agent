@@ -12,7 +12,7 @@ type ToolItem = Extract<Item, { kind: "tool" }>;
 const SUBAGENT_TOOLS = new Set(["task", "run_skill", "explore", "research", "review", "security_review"]);
 
 /** Lines shown by default in a shell output block before the "show all" button. */
-const SHELL_PREVIEW_LINES = 10;
+const SHELL_PREVIEW_LINES = 3;
 
 function pretty(json: string): string {
   try {

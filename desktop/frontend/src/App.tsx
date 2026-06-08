@@ -710,6 +710,19 @@ export default function App() {
       }
       send(trimmed, submitText.trim());
       void syncModeToController(mode);
+
+      // Auto-title: set topic title from first user message when untitled.
+      const tabId = activeTab?.topicId;
+      const tabTitle = activeTab?.topicTitle;
+      if (tabId && (!tabTitle || tabTitle === "Untitled" || tabTitle === "Global")) {
+        setTimeout(async () => {
+          const title = trimmed.length > 50 ? trimmed.substring(0, 47) + "..." : trimmed;
+          try { await app.RenameTopic(tabId, title); } catch { /* ignore */ }
+          // Refresh tab metas so the new title shows in the UI.
+          const tabs = asArray(await app.ListTabs().catch(() => [] as TabMeta[]));
+          setTabMetas(tabs);
+        }, 300);
+      }
     },
     [switchModel, openMemory, syncModeToController, mode, send, runShell, notice, t],
   );

@@ -80,6 +80,7 @@ export function Transcript({
   // stick tracks whether the view is pinned to the bottom; once the user scrolls
   // up to read, we stop yanking them back down.
   const stick = useRef(true);
+  const [scrolledUp, setScrolledUp] = useState(false);
   const resizeFrame = useRef<number | null>(null);
   const lastClientHeight = useRef<number | null>(null);
   const lastFooterHeight = useRef<number | null>(null);
@@ -98,7 +99,10 @@ export function Transcript({
 
   const onScroll = () => {
     const el = scrollRef.current;
-    if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (!el) return;
+    const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stick.current = dist < 80;
+    setScrolledUp(dist >= 200);
   };
 
   // Track question count so we can detect when the user sends a new message.
@@ -110,6 +114,7 @@ export function Transcript({
   useEffect(() => {
     if (questions.length > prevQuestionsLen.current) {
       stick.current = true;
+      setScrolledUp(false);
       const el = scrollRef.current;
       if (el) {
         requestAnimationFrame(() => {
@@ -316,6 +321,20 @@ export function Transcript({
       )}
 
       {renderedItems}
+
+      {!empty && scrolledUp && (
+        <button
+          className="transcript__down"
+          title="滚动到底部"
+          onClick={() => {
+            stick.current = true;
+            setScrolledUp(false);
+            scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      )}
     </div>
   );
 }

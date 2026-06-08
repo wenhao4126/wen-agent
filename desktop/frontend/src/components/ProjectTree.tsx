@@ -616,21 +616,19 @@ export function ProjectTree({
           closeMenu();
         },
       },
-      ...(scope === "project"
-        ? [
-            { type: "separator" as const, key: "remove-separator" },
-            {
-              key: "remove",
-              icon: <XCircle size={13} />,
-              label: confirmRemoveProject === key ? t("projectTree.confirmRemoveProject") : t("projectTree.removeProject"),
-              danger: true,
-              onSelect: () => {
-                if (confirmRemoveProject === key) void removeProject(projectPath);
-                else setConfirmRemoveProject(key);
-              },
-            },
-          ]
-        : []),
+      { type: "separator" as const, key: "remove-separator" },
+      {
+        key: "remove",
+        icon: <XCircle size={13} />,
+        label: confirmRemoveProject === key ? t("projectTree.confirmRemoveProject") : t("projectTree.removeProject"),
+        danger: true,
+        disabled: !projectPath,
+        onSelect: () => {
+          if (!projectPath) return;
+          if (confirmRemoveProject === key) void removeProject(projectPath);
+          else setConfirmRemoveProject(key);
+        },
+      },
     ];
 
     if (editingProject?.key === key) {

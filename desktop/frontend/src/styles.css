@@ -2212,7 +2212,6 @@ a[href] {
   min-height: 44px;
   outline: none;
   overflow-y: auto;
-  field-sizing: content;
 }
 .composer-card--resized .composer__input {
   height: 100%;

@@ -404,6 +404,7 @@ a[href] {
 .app {
   height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .layout {
@@ -418,6 +419,7 @@ a[href] {
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   height: 100%;
   min-height: 0;
+  min-width: 0;
   background: var(--bg);
   transition: grid-template-columns 0.16s ease;
 }
@@ -818,6 +820,7 @@ a[href] {
   flex: 1 1 auto;
   overflow: hidden;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -956,7 +959,9 @@ a[href] {
 }
 .transcript {
   position: relative;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 24px 32px 32px;
@@ -1375,6 +1380,7 @@ a[href] {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 .msg--process-only {
   margin-top: 6px;
@@ -1401,6 +1407,7 @@ a[href] {
   --process-tone-soft: color-mix(in srgb, var(--fg-dim) 12%, transparent);
   box-sizing: border-box;
   width: 100%;
+  min-width: 0;
   margin: 4px auto;
   border: 1px solid var(--border-soft);
   border-left: 3px solid var(--process-tone);
@@ -1727,6 +1734,7 @@ a[href] {
 }
 .msg--assistant .msg__body {
   line-height: 1.68;
+  min-width: 0;
 }
 .turn-actions {
   display: flex;
@@ -2032,6 +2040,8 @@ a[href] {
   border-top: 1px solid var(--border-soft);
   background: var(--chat-bg);
   padding: 12px 32px 10px;
+  position: relative;
+  z-index: 10;
 }
 .composer-wrap {
   position: relative;

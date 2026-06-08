@@ -163,4 +163,24 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: release-assets/*
+          body: |
+            ## 下载说明
+
+            ### 🪟 Windows 用户
+            - **⬇ wenhao-desktop.exe** — 下载后双击安装即可
+
+            ### 🐧 Linux 用户
+            - **⬇ wenhao-desktop** — 下载后终端执行：
+              ```
+              chmod +x wenhao-desktop
+              ./wenhao-desktop
+              ```
+
+            ### 🍎 macOS 用户
+            - **⬇ wenhao-desktop** — 下载后终端执行：
+              ```
+              chmod +x wenhao-desktop
+              ./wenhao-desktop
+              ```
+              *如果提示安全拦截，去 系统设置 → 隐私与安全性 → 仍要打开*
           generate_release_notes: true

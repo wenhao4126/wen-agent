@@ -2,7 +2,7 @@
 // open project/global topic, so switching tabs switches the active conversation.
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
-import { FileText, Plus, X } from "lucide-react";
+import { FileText, Globe, Plus, X } from "lucide-react";
 import type { TabMeta } from "../lib/types";
 import { projectColorValue } from "../lib/projectColors";
 import { useT } from "../lib/i18n";
@@ -227,6 +227,8 @@ export function TabBar({ tabs, activeTabId, onTabChange, onTabClose, onTabsClose
             >
               {tab.tabType === "file" || tab.scope === "file" ? (
                 <FileText size={12} className="tabbar__file-icon" />
+              ) : tab.scope === "global" ? (
+                <Globe size={12} className="tabbar__file-icon" />
               ) : (
                 <span
                   className={[

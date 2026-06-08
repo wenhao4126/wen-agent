@@ -32,6 +32,12 @@ export function Welcome({ onPrompt }: { onPrompt: (text: string) => void }) {
           </button>
         ))}
       </div>
+
+      <div className="welcome__footer">
+        <span className="welcome__model">wenhao v0.1.0</span>
+        <span className="welcome__footer-sep">·</span>
+        <span>{t("welcome.hintCommands")} · @ {t("welcome.hintFiles")} · ⏎ {t("welcome.hintSend")}</span>
+      </div>
     </div>
   );
 }

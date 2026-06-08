@@ -1510,6 +1510,7 @@ export default function App() {
           <main className="main">
             {state.meta?.ready === false && !state.meta?.startupErr ? (
               <div className="loading-screen">
+                <img src={logoWordmark} alt="" className="loading-screen__logo" />
                 <div className="loading-screen__spinner" />
                 <span className="loading-screen__text">{t("common.loading")}</span>
               </div>

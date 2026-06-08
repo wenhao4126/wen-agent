@@ -24,6 +24,7 @@ const Impl = lazy(() => import("./editors/HljsCode"));
 export function CodeViewer(props: EditorProps) {
   return (
     <div className="code-block">
+      {props.language && <span className="code-block__lang">{props.language}</span>}
       <CopyButton text={props.value} className="code-block__copy" />
       <Suspense
         fallback={

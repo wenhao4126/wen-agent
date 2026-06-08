@@ -977,12 +977,15 @@ a[href] {
 }
 .transcript__down {
   position: sticky;
-  bottom: 12px;
+  bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
+  max-width: none;
+  margin: 0 32px 0 auto;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--bg-elev);

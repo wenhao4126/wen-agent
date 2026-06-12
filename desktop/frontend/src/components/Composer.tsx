@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ClipboardEvent, DragEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { AlertTriangle, ArrowUp, Check, ChevronDown, Eye, FileText, Folder, FolderGit2, FolderPlus, List, Search, Square, Trash2, X, Zap } from "lucide-react";
 import { asArray } from "../lib/array";
@@ -650,15 +650,6 @@ export function Composer({
     setWorkspaceRefs((prev) => prev.filter((ref) => workspaceReferenceKey(ref) !== key));
     requestAnimationFrame(() => taRef.current?.focus());
   };
-
-  // Auto-resize the textarea as text grows.
-  const autoResize = useCallback(() => {
-    const ta = taRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, window.innerHeight * 0.5) + "px";
-  }, []);
-  useEffect(() => { autoResize(); }, [text, autoResize]);
 
   const togglePastedPreview = (label: string) => {
     setOpenPastedLabels((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));

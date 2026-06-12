@@ -656,7 +656,7 @@ export function Composer({
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+    ta.style.height = Math.min(ta.scrollHeight, window.innerHeight * 0.5) + "px";
   }, []);
   useEffect(() => { autoResize(); }, [text, autoResize]);
 
@@ -1095,7 +1095,6 @@ export function Composer({
               lastCompositionEndAt.current = Date.now();
             }}
             placeholder={disabled ? t("common.loading") : t("composer.placeholder")}
-            rows={5}
             disabled={disabled}
           />
           {!running && (

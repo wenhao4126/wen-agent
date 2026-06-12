@@ -644,11 +644,10 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 	label := entry.Model
 	var classifier *control.ProviderAutoPlanClassifier
 
-	// Two-model collaboration: a distinct planner_model wraps the executor in a
 	// Coordinator with its own session, kept separate for cache stability. The
 	// planner gets the same standing memory context and a filtered read-only
 	// research tool set, so it can inspect rules/code without side effects.
-	if pm := cfg.Agent.PlannerModel; pm != "" {
+	if pm := cfg.Agent.PlannerModel; pm != "" && entry.Name == cfg.DefaultModel {
 		pe, ok := cfg.ResolveModel(pm)
 		if !ok {
 			return nil, fmt.Errorf("planner_model %q is not a configured provider", pm)
@@ -670,6 +669,9 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 				ArchiveDir:        config.ArchiveDir(),
 			}, executor, cfg.Agent.Temperature, sink, control.TaskWarrantsPlanner)
 			label = entry.Model + " + planner " + pe.Model
+			if l := cfg.Agent.ModelLabel; l != "" {
+				label = l
+			}
 		}
 	}
 	if !strings.EqualFold(strings.TrimSpace(cfg.Agent.AutoPlan), "off") && cfg.Agent.AutoPlanClassifier != "" {

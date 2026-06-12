@@ -446,7 +446,8 @@ func (c *Config) BashMode() string {
 type AgentConfig struct {
 	SystemPrompt     string            `toml:"system_prompt"`
 	SystemPromptFile string            `toml:"system_prompt_file"`
-	Mode             string            `toml:"mode"` // "normal" | "orchestrator"
+	ModelLabel       string            `toml:"model_label"` // overrides display label when planner is active
+	Mode             string            `toml:"mode"`     // "normal" | "orchestrator"
 	MaxSteps         int               `toml:"max_steps"` // tool-call rounds per turn; 0 = unlimited
 	Temperature      float64           `toml:"temperature"`
 	PlannerModel     string            `toml:"planner_model"`

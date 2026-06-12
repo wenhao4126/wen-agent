@@ -1,0 +1,54 @@
+name: Validate Skills
+
+on:
+  push:
+    paths:
+      - "examples/**/SKILL.md"
+      - "SKILL.md"
+  pull_request:
+    paths:
+      - "examples/**/SKILL.md"
+      - "SKILL.md"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate all example SKILL.md files
+        run: |
+          set -e
+          echo "=== 校验示例 SKILL.md 文件 ==="
+          FAIL_COUNT=0
+          for f in examples/*/SKILL.md; do
+            if [ -f "$f" ]; then
+              echo ""
+              echo "检查: $f"
+              python3 references/quality_check.py "$f" || FAIL_COUNT=$((FAIL_COUNT+1))
+            fi
+          done
+          echo ""
+          echo "=== 校验结果: $FAIL_COUNT 个失败 ==="
+          exit $FAIL_COUNT
+
+      - name: Validate references exist
+        run: |
+          echo "=== 检查必选 section ==="
+          for f in examples/*/SKILL.md; do
+            [ -f "$f" ] || continue
+            name=$(basename $(dirname "$f"))
+            grep -q "心智模型" "$f" || echo "  ❌ $name: 缺少心智模型"
+            grep -q "诚实边界" "$f" || echo "  ❌ $name: 缺少诚实边界"
+            grep -q "表达DNA" "$f" || echo "  ❌ $name: 缺少表达DNA"
+            grep -q "决策启发式" "$f" || echo "  ❌ $name: 缺少决策启发式"
+          done
+          echo "✅ section 检查完成"

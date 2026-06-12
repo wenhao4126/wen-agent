@@ -2786,11 +2786,11 @@ func (a *App) Effort() EffortInfo {
 func (a *App) EffortForTab(tabID string) EffortInfo {
 	entry, err := a.currentProviderEntryForTab(tabID)
 	if err != nil {
-		return EffortInfo{Current: "auto", Levels: []string{}}
+		return EffortInfo{Current: "medium", Levels: []string{}}
 	}
 	cap := config.EffortCapabilityForEntry(entry)
 	if !cap.Supported {
-		return EffortInfo{Supported: false, Current: "auto", Default: cap.Default, Levels: []string{}}
+		return EffortInfo{Supported: false, Current: cap.Default, Default: cap.Default, Levels: []string{}}
 	}
 	levels := cap.Levels
 	if levels == nil {

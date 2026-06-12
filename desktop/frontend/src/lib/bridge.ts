@@ -373,7 +373,7 @@ function makeMockApp(): AppBindings {
   const globalWorkspaceRoot = "~/Library/Application Support/wenhao/global-workspace";
   let cwd = freshMock ? globalWorkspaceRoot : "~/projects/joyquant-db"; // mutable so PickWorkspace is visible in dev
   let workspaces = freshMock ? [] : ["~/projects/joyquant-db", "~/projects/joyquant-sys", "~/projects/wenhao", "~/projects/blade"];
-  let mockEffort = "auto";
+  let mockEffort = "medium";
   const day = 86_400_000;
   const t0 = Date.now();
   // Mutable so MCP add/remove/retry are observable in browser dev.
@@ -1354,13 +1354,13 @@ function makeMockApp(): AppBindings {
           await this.SetModel(name);
         },
         async Effort() {
-          return { supported: true, current: mockEffort, default: "high", levels: ["auto", "high", "max"] };
+          return { supported: true, current: mockEffort, default: "medium", levels: ["low", "medium", "high", "max"] };
         },
         async EffortForTab() {
           return this.Effort();
         },
         async SetEffort(level: string) {
-          mockEffort = level || "auto";
+          mockEffort = level || "medium";
         },
         async SetEffortForTab(_tabID, level) {
           await this.SetEffort(level);

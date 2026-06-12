@@ -85,11 +85,15 @@ func NormalizeEffort(e *ProviderEntry, raw string) (string, error) {
 	}
 }
 
-// EffortDisplay returns the selected /effort level, using "auto" for provider
-// default.
+// EffortDisplay returns the selected /effort level, using the capability default
+// when no explicit effort is set.
 func EffortDisplay(e *ProviderEntry) string {
 	if e == nil || strings.TrimSpace(e.Effort) == "" {
-		return "auto"
+		cap := EffortCapabilityForEntry(e)
+		if cap.Default != "" {
+			return cap.Default
+		}
+		return "auto" // fallback for providers without effort support
 	}
 	return normalizeEffortLevel(e.Effort)
 }

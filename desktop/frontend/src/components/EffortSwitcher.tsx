@@ -20,7 +20,7 @@ export function EffortSwitcher({
   const levels = asArray(effort?.levels);
   if (!effort?.supported || levels.length === 0) return null;
 
-  const current = effort.current || "auto";
+  const current = effort?.current || effort?.default || "medium";
   const pick = (level: string) => {
     setOpen(false);
     if (level !== current) onPick(level);
@@ -31,7 +31,7 @@ export function EffortSwitcher({
       <button
         ref={triggerRef}
         type="button"
-        className={`modelsw__trigger effortsw__trigger ${current !== "auto" ? "effortsw__trigger--explicit" : ""}`}
+        className={`modelsw__trigger effortsw__trigger ${current !== effort?.default ? "effortsw__trigger--explicit" : ""}`}
         disabled={disabled}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}

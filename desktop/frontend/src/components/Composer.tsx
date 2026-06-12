@@ -651,6 +651,17 @@ export function Composer({
     requestAnimationFrame(() => taRef.current?.focus());
   };
 
+  // Auto-resize the textarea when the user hasn't manually dragged the
+  // resize handle (composerHeight === null). The footer naturally pushes
+  // the transcript up when it grows because of flex layout.
+  useEffect(() => {
+    if (composerHeight !== null) return;
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, composerMaxHeight()) + "px";
+  }, [text, composerHeight]);
+
   const togglePastedPreview = (label: string) => {
     setOpenPastedLabels((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));
   };

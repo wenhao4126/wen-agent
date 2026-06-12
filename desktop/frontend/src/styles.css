@@ -2257,10 +2257,9 @@ a[href] {
   font: inherit;
   font-size: var(--font-content);
   line-height: 1.55;
-  max-height: 50vh;
   min-height: 44px;
   outline: none;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 .composer-card--resized .composer__input {
   height: 100%;

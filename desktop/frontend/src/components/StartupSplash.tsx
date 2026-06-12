@@ -8,11 +8,7 @@ const FADE_OUT_MS = 420;
 const MAX_HOLD_MS = 6000;
 
 export function shouldShowStartupSplash(): boolean {
-  try {
-    return window.sessionStorage.getItem(SPLASH_FLAG) !== "1";
-  } catch {
-    return true;
-  }
+  return true;
 }
 
 function markSplashShown(): void {

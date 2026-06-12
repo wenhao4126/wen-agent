@@ -26,7 +26,7 @@ have enough evidence. Do not write full implementations or attempt side effects.
 Outline the steps, which files to touch, and the key decisions. Keep it short and
 actionable.`
 
-const DefaultPlannerMaxSteps = 6
+const DefaultPlannerMaxSteps = 50
 
 // PlannerMaxSteps bounds planner-side read-only exploration so two-model mode
 // gains context access without letting planning turns become long-running agent

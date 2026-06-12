@@ -819,7 +819,7 @@ a[href] {
 
 /* ── transcript ──────────────────────────────────────────────────────────── */
 .main {
-  flex: 1;
+  flex: 1 1 0;
   overflow: hidden;
   min-height: 0;
   min-width: 0;

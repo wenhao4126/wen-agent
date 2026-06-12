@@ -205,7 +205,6 @@ export function Composer({
   const [composerHeight, setComposerHeight] = useState<number | null>(loadComposerHeight);
   const [composerResizing, setComposerResizing] = useState(false);
   const [textareaAutoHeight, setTextareaAutoHeight] = useState<number | null>(null);
-  const [textareaAutoOverflow, setTextareaAutoOverflow] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const composerCardRef = useRef<HTMLDivElement>(null);
   const workspaceAnchorRef = useRef<HTMLDivElement>(null);
@@ -554,7 +553,16 @@ export function Composer({
     }
 
     const pasted = e.clipboardData.getData("text");
-    if (!shouldFoldPaste(pasted)) return;
+    if (!shouldFoldPaste(pasted)) {
+      // Normal paste: the browser handles insertion and the onChange→setText→
+      // useLayoutEffect chain measures the height synchronously.  WebKit may
+      // report a stale scrollHeight in that synchronous callback, so schedule
+      // a deferred re-measure after the browser has had a chance to lay out
+      // the new text.  This is a safety net; if the sync measurement was
+      // already correct the rAF call is a no-op (set state only on change).
+      requestAnimationFrame(() => measureTextareaAutoHeight());
+      return;
+    }
 
     e.preventDefault();
     const ta = e.currentTarget;
@@ -661,19 +669,23 @@ export function Composer({
   const measureTextareaAutoHeight = useCallback(() => {
     if (composerHeight !== null) {
       setTextareaAutoHeight(null);
-      setTextareaAutoOverflow(false);
       return;
     }
     const node = taRef.current;
     if (!node) return;
+    // Save both height and overflow-y before measurement so we can restore
+    // them. WebKit (used by Wails on Linux) may report a stale scrollHeight
+    // when overflow-y is "hidden", so we temporarily flip it to "visible"
+    // to guarantee an accurate content-height read.
     const previousHeight = node.style.height;
+    const previousOverflowY = node.style.overflowY;
+    node.style.overflowY = "visible";
     node.style.height = "auto";
     const maxHeight = composerAutoInputMaxHeight();
     const nextHeight = Math.min(node.scrollHeight, maxHeight);
-    const nextOverflow = node.scrollHeight > maxHeight + 1;
     node.style.height = previousHeight;
+    node.style.overflowY = previousOverflowY;
     setTextareaAutoHeight((current) => (current === nextHeight ? current : nextHeight));
-    setTextareaAutoOverflow((current) => (current === nextOverflow ? current : nextOverflow));
   }, [composerHeight]);
 
   useLayoutEffect(() => {
@@ -881,8 +893,11 @@ export function Composer({
   };
 
   const composerCardStyle = composerHeight === null ? undefined : ({ "--composer-height": `${composerHeight}px` } as CSSProperties);
+  // Always use overflow-y:auto so pasted content is never clipped — the JS-set
+  // height grows with content, and the CSS scrollbar is the safety net when content
+  // exceeds the auto-grow ceiling (WebKit may report stale scrollHeight with hidden).
   const textareaStyle = composerHeight === null && textareaAutoHeight !== null
-    ? ({ height: `${textareaAutoHeight}px`, overflowY: textareaAutoOverflow ? "auto" : "hidden" } as CSSProperties)
+    ? ({ height: `${textareaAutoHeight}px`, overflowY: "auto" } as CSSProperties)
     : undefined;
   const modeOptions: Array<{ id: Mode; label: string; icon: ReactNode }> = [
     { id: "normal", label: "auto", icon: <Zap size={13} /> },

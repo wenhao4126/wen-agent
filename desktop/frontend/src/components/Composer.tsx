@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ClipboardEvent, DragEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { AlertTriangle, ArrowUp, Check, ChevronDown, Eye, FileText, Folder, FolderGit2, FolderPlus, List, Search, Square, Trash2, X, Zap } from "lucide-react";
 import { asArray } from "../lib/array";
@@ -35,6 +35,7 @@ const LONG_PASTE_MIN_LINES = 20;
 const COMPOSER_MIN_HEIGHT = 86;
 const COMPOSER_MAX_HEIGHT = 360;
 const COMPOSER_MAX_VIEWPORT_RATIO = 0.4;
+const COMPOSER_AUTO_RESERVED_HEIGHT = 58;
 // Grace after compositionend to swallow a confirm-Enter that lands just after
 // it; the real gap is a few ms, so keep it short or a deliberate quick second
 // Enter (submit) gets eaten too.
@@ -78,6 +79,10 @@ function composerMaxHeight(): number {
 
 function clampComposerHeight(height: number): number {
   return Math.min(Math.max(Math.round(height), COMPOSER_MIN_HEIGHT), composerMaxHeight());
+}
+
+function composerAutoInputMaxHeight(): number {
+  return Math.max(32, composerMaxHeight() - COMPOSER_AUTO_RESERVED_HEIGHT);
 }
 
 function loadComposerHeight(): number | null {
@@ -199,6 +204,8 @@ export function Composer({
   const [confirmRemovePath, setConfirmRemovePath] = useState<string | null>(null);
   const [composerHeight, setComposerHeight] = useState<number | null>(loadComposerHeight);
   const [composerResizing, setComposerResizing] = useState(false);
+  const [textareaAutoHeight, setTextareaAutoHeight] = useState<number | null>(null);
+  const [textareaAutoOverflow, setTextareaAutoOverflow] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const composerCardRef = useRef<HTMLDivElement>(null);
   const workspaceAnchorRef = useRef<HTMLDivElement>(null);
@@ -651,16 +658,43 @@ export function Composer({
     requestAnimationFrame(() => taRef.current?.focus());
   };
 
-  // Auto-resize the textarea when the user hasn't manually dragged the
-  // resize handle (composerHeight === null). The footer naturally pushes
-  // the transcript up when it grows because of flex layout.
+  const measureTextareaAutoHeight = useCallback(() => {
+    if (composerHeight !== null) {
+      setTextareaAutoHeight(null);
+      setTextareaAutoOverflow(false);
+      return;
+    }
+    const node = taRef.current;
+    if (!node) return;
+    const previousHeight = node.style.height;
+    node.style.height = "auto";
+    const maxHeight = composerAutoInputMaxHeight();
+    const nextHeight = Math.min(node.scrollHeight, maxHeight);
+    const nextOverflow = node.scrollHeight > maxHeight + 1;
+    node.style.height = previousHeight;
+    setTextareaAutoHeight((current) => (current === nextHeight ? current : nextHeight));
+    setTextareaAutoOverflow((current) => (current === nextOverflow ? current : nextOverflow));
+  }, [composerHeight]);
+
+  useLayoutEffect(() => {
+    measureTextareaAutoHeight();
+  }, [text, measureTextareaAutoHeight]);
+
   useEffect(() => {
     if (composerHeight !== null) return;
-    const ta = taRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, composerMaxHeight()) + "px";
-  }, [text, composerHeight]);
+    let frame = 0;
+    const update = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        measureTextareaAutoHeight();
+      });
+    };
+    const ro = new ResizeObserver(() => update());
+    const wrapper = composerCardRef.current;
+    if (wrapper) ro.observe(wrapper);
+    return () => { ro.disconnect(); if (frame) window.cancelAnimationFrame(frame); };
+  }, [composerHeight, measureTextareaAutoHeight]);
 
   const togglePastedPreview = (label: string) => {
     setOpenPastedLabels((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));
@@ -847,6 +881,9 @@ export function Composer({
   };
 
   const composerCardStyle = composerHeight === null ? undefined : ({ "--composer-height": `${composerHeight}px` } as CSSProperties);
+  const textareaStyle = composerHeight === null && textareaAutoHeight !== null
+    ? ({ height: `${textareaAutoHeight}px`, overflowY: textareaAutoOverflow ? "auto" : "hidden" } as CSSProperties)
+    : undefined;
   const modeOptions: Array<{ id: Mode; label: string; icon: ReactNode }> = [
     { id: "normal", label: "auto", icon: <Zap size={13} /> },
     { id: "plan", label: "plan", icon: <List size={13} /> },
@@ -1081,6 +1118,7 @@ export function Composer({
           <textarea
             ref={taRef}
             className="composer__input"
+            style={textareaStyle}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onSelect={rememberCaret}

@@ -1298,6 +1298,8 @@ a[href] {
   border-radius: 16px;
   padding: 10px 16px;
   position: relative;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .rewind {
   position: absolute;
@@ -1770,6 +1772,8 @@ a[href] {
 .msg--assistant .msg__body {
   line-height: 1.68;
   min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .turn-actions {
   display: flex;

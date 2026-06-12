@@ -1095,7 +1095,7 @@ export function Composer({
               lastCompositionEndAt.current = Date.now();
             }}
             placeholder={disabled ? t("common.loading") : t("composer.placeholder")}
-            rows={1}
+            rows={5}
             disabled={disabled}
           />
           {!running && (

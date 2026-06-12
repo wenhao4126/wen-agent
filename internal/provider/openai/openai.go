@@ -43,10 +43,10 @@ func New(cfg provider.Config) (provider.Provider, error) {
 		effort = strings.ToLower(strings.TrimSpace(effort))
 		switch effort {
 		case "", "off": // "off" is a retired level (disabled thinking); fall back to the default depth
-			effort = "high"
-		case "high", "max":
+			effort = "medium"
+		case "low", "medium", "high", "max":
 		default:
-			return nil, fmt.Errorf("openai: provider %q uses DeepSeek thinking; effort must be high or max", name)
+			return nil, fmt.Errorf("openai: provider %q uses DeepSeek thinking; effort must be low, medium, high, or max", name)
 		}
 	} else if effort != "" {
 		// Non-DeepSeek backends use OpenAI's reasoning_effort scale (low/medium/

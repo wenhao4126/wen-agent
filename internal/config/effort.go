@@ -31,7 +31,7 @@ func EffortCapabilityForEntry(e *ProviderEntry) EffortCapability {
 	}
 	switch {
 	case isDeepSeekEntry(e):
-		return EffortCapability{Supported: true, Levels: []string{"high", "max"}, Default: "high"}
+		return EffortCapability{Supported: true, Levels: []string{"low", "medium", "high", "max"}, Default: "medium"}
 	case e != nil && e.Kind == "anthropic":
 		return EffortCapability{Supported: true, Levels: []string{"auto", "low", "medium", "high", "xhigh", "max"}, Default: "auto"}
 	default:
@@ -59,14 +59,12 @@ func NormalizeEffort(e *ProviderEntry, raw string) (string, error) {
 	switch {
 	case isDeepSeekEntry(e):
 		switch level {
-		case "high", "max":
+		case "low", "medium", "high", "max":
 			return level, nil
-		case "low", "medium":
-			return "high", nil
 		case "xhigh":
 			return "max", nil
 		default:
-			return "", fmt.Errorf("usage: /effort high|max")
+			return "", fmt.Errorf("usage: /effort low|medium|high|max")
 		}
 	case e != nil && e.Kind == "anthropic":
 		switch level {

@@ -17,7 +17,7 @@ import (
 // the final answer. boot wires this over the agent's sub-agent machinery; nil
 // means subagent skills are unavailable in this session (they error rather than
 // silently inlining, which would lose the isolation the author asked for).
-type SubagentRunner func(ctx context.Context, sk Skill, task string) (string, error)
+type SubagentRunner func(ctx context.Context, sk Skill, task, model, effort string) (string, error)
 
 // ProfileResolver returns the model/effort profile a subagent skill will use.
 // It is optional; without one, skill frontmatter still supplies display metadata.
@@ -61,7 +61,9 @@ func (*runSkillTool) Schema() json.RawMessage {
 "type":"object",
 "properties":{
   "name":{"type":"string","description":"Skill identifier as it appears in the pinned Skills index (e.g. 'explore', 'review'). Case-sensitive. Just the identifier, not the [🧬 subagent] tag."},
-  "arguments":{"type":"string","description":"Free-form arguments. For inline skills: appended as an 'Arguments:' line; the skill's own instructions decide how to use them. For subagent skills: REQUIRED — becomes the entire task the subagent receives."}
+  "arguments":{"type":"string","description":"Free-form arguments. For inline skills: appended as an 'Arguments:' line; the skill's own instructions decide how to use them. For subagent skills: REQUIRED — becomes the entire task the subagent receives."},
+  "model":{"type":"string","description":"Optional model override for the subagent (a configured provider/model name)."},
+  "effort":{"type":"string","description":"Optional reasoning effort for the subagent (e.g. high, max)."}
 },
 "required":["name"]
 }`)
@@ -71,6 +73,8 @@ func (t *runSkillTool) Execute(ctx context.Context, args json.RawMessage) (strin
 	var p struct {
 		Name      string `json:"name"`
 		Arguments string `json:"arguments"`
+		Model     string `json:"model"`
+		Effort    string `json:"effort"`
 	}
 	if err := json.Unmarshal(args, &p); err != nil {
 		return "", fmt.Errorf("invalid args: %w", err)
@@ -92,7 +96,7 @@ func (t *runSkillTool) Execute(ctx context.Context, args json.RawMessage) (strin
 		if rawArgs == "" {
 			return "", fmt.Errorf("run_skill: skill %q is a subagent and requires 'arguments' — the subagent has no other context, so describe the concrete task", name)
 		}
-		return t.runner(ctx, sk, rawArgs)
+		return t.runner(ctx, sk, rawArgs, p.Model, p.Effort)
 	}
 	return renderInline(sk, rawArgs), nil
 }
@@ -145,13 +149,18 @@ func (*subagentSkillTool) ReadOnly() bool        { return false }
 func (t *subagentSkillTool) Description() string { return t.description }
 
 func (t *subagentSkillTool) Schema() json.RawMessage {
-	return json.RawMessage(`{"type":"object","properties":{"task":{"type":"string","description":` +
-		strconv.Quote(t.taskDesc) + `}},"required":["task"]}`)
+	return json.RawMessage(`{"type":"object","properties":{` +
+		`"task":{"type":"string","description":` + strconv.Quote(t.taskDesc) + `},` +
+		`"model":{"type":"string","description":"Optional model override for the subagent (a configured provider/model name)."},` +
+		`"effort":{"type":"string","description":"Optional reasoning effort for the subagent (e.g. high, max)."}` +
+		`},"required":["task"]}`)
 }
 
 func (t *subagentSkillTool) Execute(ctx context.Context, args json.RawMessage) (string, error) {
 	var p struct {
-		Task string `json:"task"`
+		Task   string `json:"task"`
+		Model  string `json:"model"`
+		Effort string `json:"effort"`
 	}
 	if err := json.Unmarshal(args, &p); err != nil {
 		return "", fmt.Errorf("invalid args: %w", err)
@@ -172,7 +181,7 @@ func (t *subagentSkillTool) Execute(ctx context.Context, args json.RawMessage) (
 	if t.runner == nil {
 		return "", fmt.Errorf("%s: no subagent runner is configured in this session", t.toolName)
 	}
-	return t.runner(ctx, sk, task)
+	return t.runner(ctx, sk, task, p.Model, p.Effort)
 }
 
 func (t *subagentSkillTool) ResolveProfile(json.RawMessage) *event.Profile {

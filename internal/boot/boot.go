@@ -514,10 +514,17 @@ func Build(ctx context.Context, opts Options) (*control.Controller, error) {
 	// as system prompt, a tool set scoped to the skill's allowed-tools (minus the
 	// task/skill meta-tools, to bar recursion), and an optional per-skill model.
 	// Its tool activity nests under the invoking call, like `task`.
-	skillRunner := func(sctx context.Context, sk skill.Skill, task string) (string, error) {
+	skillRunner := func(sctx context.Context, sk skill.Skill, task, model, effort string) (string, error) {
 		prov, price, ctxWin := execProv, entry.Price, entry.ContextWindow
 		modelRef := subagentModelRef(cfg, sk)
 		effortRef := subagentEffortRef(cfg, sk)
+		// Runtime overrides from the tool call have highest priority.
+		if strings.TrimSpace(model) != "" {
+			modelRef = strings.TrimSpace(model)
+		}
+		if strings.TrimSpace(effort) != "" {
+			effortRef = strings.TrimSpace(effort)
+		}
 		if modelRef != "" || effortRef != "" {
 			p, pr, cw, err := resolveSubagentProvider(modelRef, effortRef)
 			if err != nil {

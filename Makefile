@@ -1,6 +1,7 @@
 VERSION := $(shell git describe --tags --always 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 GOEXE := $(shell go env GOEXE)
+export GOCACHE := $(shell [ -w "$$HOME/.cache" ] && echo "$$HOME/.cache/go-build" || echo "/tmp/gocache-wenhao")
 
 # CodeGraph release pinned for the bundled MCP server / e2e test. Bump together
 # with any change to the integration in internal/codegraph.

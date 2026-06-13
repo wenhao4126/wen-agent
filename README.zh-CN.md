@@ -419,12 +419,8 @@ Wenhao adds 11 unique modules and many exclusive features on top.
 If Wenhao has been useful and you'd like to say thanks, you can. It stays a coffee, not a contract —
 donations don't buy feature priority or change how issues get triaged.
 
-- **国内** — 微信支付（扫下方二维码 / scan QR below）
 - **国际 / International** — PayPal: [paypal.me/yuhuahui](https://paypal.me/yuhuahui)
 
-<p align="center">
-  <img src=".github/sponsor/wechat-pay.jpg" alt="微信支付收款码 / WeChat Pay QR" width="240"/>
-</p>
 
 ---
 
